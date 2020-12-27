@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import click
@@ -7,7 +8,7 @@ from copy import deepcopy
 from os.path import dirname
 from pathlib import Path
 
-from generate import generate
+from generate import generate_commands
 
 
 def copy_to_workspace(src, dst) -> None:
@@ -90,14 +91,14 @@ def create_workspace(deployer, workspace, profile):
     workspace_top_conf_dir = workspace + "/conf"
     workspace_punchbox_conf_dir = workspace_top_conf_dir + '/punchbox'
     workspace_generated_conf_dir = workspace_punchbox_conf_dir + "/generated"
-    workspace_pp_conf_dir = workspace + "/punchplatform-conf"
+    workspace_pp_conf_dir = workspace + "/pp-conf"
     workspace_vagrant_dir = workspace + "/vagrant"
-    workspace_template_dir = workspace_punchbox_conf_dir + '/templates'
+    workspace_template_dir = workspace_punchbox_conf_dir + '/conf/deployment_templates'
 
-    src_settings = pb_dir + '/samples/' + profile + '/settings.yml'
-    src_topology = pb_dir + '/samples/' + profile + '/topology.yml'
-    src_resolv = pb_dir + '/samples/' + profile + '/resolv.yml'
-    src_vagrant_j2 = pb_dir + '/vagrant/Vagrantfile.j2'
+    src_settings = pb_dir + '/conf/profiles/' + profile + '/settings.yml'
+    src_topology = pb_dir + '/conf/profiles/' + profile + '/topology.yml'
+    src_resolv = pb_dir + '/conf/profiles/' + profile + '/resolv.yml'
+    src_vagrant_j2 = pb_dir + '/conf/vagrant/Vagrantfile.j2'
     dst_resolv = workspace_top_conf_dir + '/resolv.yml'
     dst_settings = workspace_top_conf_dir + '/settings.yml'
     dst_topology = workspace_top_conf_dir + '/topology.yml'
@@ -126,7 +127,7 @@ def create_workspace(deployer, workspace, profile):
 
         # populate the user workspace with the required starting configuration files.
 
-        template_dir = os.path.abspath(pb_dir + '/templates/')
+        template_dir = os.path.abspath(pb_dir + '/conf/deployment_templates/')
         src_files = os.listdir(template_dir)
         for file_name in src_files:
             full_file_name = os.path.join(template_dir, file_name)
@@ -213,7 +214,7 @@ def build_workspace(ctx, workspace, yes):
                           "    --topology " + conf['punch']['user_topology'] + "  \n" +
                           "    --template " + conf['vagrant']['template'] + "  \n" +
                           "    --output " + conf['vagrant']['vagrantfile'] + "\n")
-                    ctx.invoke(generate.generate_vagrantfile, settings=settings, topology=topology,
+                    ctx.invoke(generate_commands.generate_vagrantfile, settings=settings, topology=topology,
                                template=conf['vagrant']['template'], output=vagrantfile)
 
     if not yes or click.confirm('generate platform blueprint ' + conf['punch']['blueprint'] + ' ?'):
@@ -225,7 +226,7 @@ def build_workspace(ctx, workspace, yes):
                   "    --topology " + conf['punch']['user_topology'] + "  \n" +
                   "    --settings " + conf['punch']['user_settings'] + "  \n" +
                   "    --output " + conf['punch']['blueprint'] + "\n")
-            ctx.invoke(generate.generate_blueprint,
+            ctx.invoke(generate_commands.generate_blueprint,
                        deployer=conf['env']['deployer'],
                        topology=topology,
                        settings=settings,
@@ -238,7 +239,7 @@ def build_workspace(ctx, workspace, yes):
                   "    --blueprint " + conf['punch']['blueprint'] + "  \\\n" +
                   "    --template " + conf['punch']['deployment_settings_template'] + "  \\\n" +
                   '    --output ' + conf['punch']['deployment_settings'] + "\n")
-            ctx.invoke(generate.generate_deployment,
+            ctx.invoke(generate_commands.generate_deployment,
                        blueprint=blueprint,
                        template=conf['punch']['deployment_settings_template'],
                        output=output)

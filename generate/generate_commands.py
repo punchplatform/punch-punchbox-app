@@ -27,26 +27,6 @@ def generate() -> None:
     pass
 
 
-@generate.command(name="topology")
-@click.option(
-    "--deployer",
-    required=True,
-    type=click.Path(exists=True),
-    help="path to the punch deployer folder",
-)
-@click.option(
-    "--topology",
-    required=True,
-    type=click.File("rb"),
-    help="a punch topology description file",
-)
-@click.option(
-    "--output",
-    default=None,
-    type=click.File("w"),
-    help="the generated platform inventory topology. "
-         "If not provided the file is written to stdout",
-)
 def compute_blueprint_service_settings(blueprint, service_name, settings_dict, topology_dict):
     """Form a complex number.
 
@@ -77,12 +57,12 @@ def compute_blueprint_service_settings(blueprint, service_name, settings_dict, t
 
     # Add these platform wide settings, if any, to the blueprint
     blp_service_dict['settings'] = deepcopy({**plf_service_settings, **plf_global_settings})
-    print(yaml.dump(blueprint))
+    # print(yaml.dump(blueprint))
     # loop over all the servers of the topology and find out where we have this
     # service
     for server_name, server_dict in topology_dict['servers'].items():
         if 'services' in server_dict:
-            print(yaml.dump(blueprint))
+            # print(yaml.dump(blueprint))
             for this_server_service in server_dict['services']:
                 # the default cluster name is 'common'
                 this_cluster_name = 'common'
@@ -94,12 +74,12 @@ def compute_blueprint_service_settings(blueprint, service_name, settings_dict, t
                     blp_service_dict['clusters'][this_cluster_name] = {}
                     blp_service_dict['clusters'][this_cluster_name]['servers'] = {}
                     blp_service_dict['clusters'][this_cluster_name]['settings'] = deepcopy(plf_service_settings)
-                print(yaml.dump(blueprint))
+                # print(yaml.dump(blueprint))
                 blp_cluster = blp_service_dict['clusters'][this_cluster_name]
                 if server_name not in blp_cluster['servers']:
                     blp_cluster['servers'][server_name] = {}
                     blp_cluster['servers'][server_name]['settings'] = {}
-                print(yaml.dump(blueprint))
+                # print(yaml.dump(blueprint))
                 try:
                     for prop_key, prop_value in \
                             settings_dict['services'][service_name]['clusters'][this_cluster_name]['settings'].items():
@@ -117,7 +97,7 @@ def compute_blueprint_service_settings(blueprint, service_name, settings_dict, t
                         blp_cluster['servers'][server_name]['settings'][prop_key] = prop_value
                 except KeyError:
                     pass
-                print(yaml.dump(blueprint))
+                # print(yaml.dump(blueprint))
 
 
 def compute_blueprint_setting(blueprint, settings_dict, topology_dict):

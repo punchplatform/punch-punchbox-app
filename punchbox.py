@@ -7,7 +7,7 @@ import click
 from click_help_colors import HelpColorsGroup
 
 from deploy.deploy_commands import deploy
-from generate.generate import generate
+from generate.generate_commands import generate
 from workspace.workspace_commands import workspace
 
 

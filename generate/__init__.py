@@ -1,1 +1,1 @@
-__all__ = ["generate"]
+__all__ = ["generate_commands.py"]
