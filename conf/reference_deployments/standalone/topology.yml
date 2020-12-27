@@ -1,0 +1,7 @@
+---
+servers:
+    localhost:
+        services:
+        - service: zookeeper
+        users:
+        - user: localusername

@@ -1,0 +1,43 @@
+---
+platform:
+  id: standalone
+  data_root: /data
+  logs_root: /var/log/punch
+  setups_root: /opt
+  punch_daemons_user: localusername
+  punch_daemons_group: localusergroup
+  production_interface: lo0
+  admin_interface: lo0
+
+services:
+  zookeeper:
+    settings:
+      zookeeper_childopts: -server -Xmx128m -Xms128m
+    clusters:
+      common:
+        settings:
+          cluster_port: 2181
+          punchplatform_root_node: /punch
+  kafka:
+    clusters:
+      common:
+        settings:
+          cluster_port: 9200
+          brokers_config: punchplatform-local-server.properties
+          default_partitions: 2
+          default_replication_factor: 1
+          kafka_brokers_jvm_xmx: 512M
+          partition_retention_bytes: 1073741824
+          partition_retention_hours: 24
+          zk_cluster: common
+          zk_root: kafka
+
+punchplatform_operator:
+  configuration_name_dir_from_home: pp-conf
+  operators_username:
+    - localuserlogin
+  reporters:
+    - common
+  storage:
+    kafka_cluster: common
+    type: kafka

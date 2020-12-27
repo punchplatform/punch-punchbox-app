@@ -1,0 +1,113 @@
+---
+platform:
+  platform_id: {{ platform.id }}
+  setups_root: {{ platform.setups_root }}
+  remote_data_root_directory: {{ platform.data_root }}
+  remote_logs_root_directory: {{ platform.logs_root }}
+  punchplatform_daemons_user: {{ platform.punch_daemons_user }}
+  punchplatform_group: {{ platform.punch_daemons_group }}
+
+{% if services.zookeeper is defined and services.zookeeper|length %}
+{% set global_settings = services.zookeeper.settings %}
+{% set clusters = services.zookeeper.clusters %}
+zookeeper:
+  zookeeper_version: {{ global_settings.version }}
+  zookeeper_nodes_production_interface: {{ global_settings.production_interface }}
+  zookeeper_childopts: {{ global_settings.zookeeper_childopts }}
+  clusters:
+  {% for cluster_name, cluster in clusters.items() %}
+    {%- set cluster_settings = cluster.settings %}
+    {%- set servers = cluster.servers %}
+    {{ cluster_name }}:
+      cluster_port: {{ cluster_settings.cluster_port }}
+      punchplatform_root_node: {{ cluster_settings.punchplatform_root_node }}
+      hosts:
+        {% for host, server_settings in servers.items() %}
+        - {{ host }}
+        {% endfor %}
+      servers:
+        {% for host, server_settings in servers.items() %}
+        - {{ host }} : {}
+        {% endfor %}
+  {% endfor %}
+{% endif %}
+
+{% if services.kafka is defined and services.kafka|length %}
+{% set global_settings = services.kafka.settings %}
+{% set clusters = services.kafka.clusters %}
+kafka:
+  kafka_version: {{ global_settings.version }}
+  clusters:
+  {% for cluster_name, cluster in clusters.items() %}
+    {%- set cluster_settings = cluster.settings %}
+    {%- set servers = cluster.servers %}
+    kafka_brokers_production_interface: {{ global_settings.production_interface }}
+    {{ cluster_name }}:
+      brokers_with_ids:
+      {% for hostname, host in servers.items() %}
+      {% set host_settings = host.settings %}
+      - id: {{ loop.index }}
+        broker: {{ hostname }}:{{ host_settings.cluster_port }}
+      {% endfor %}
+      zk_cluster: {{ cluster_name }}
+      zk_root: {{ cluster_settings.zk_root }}
+      brokers_config: {{ cluster_settings.brokers_config }}
+      default_replication_factor: {{ cluster_settings.default_replication_factor }}
+      default_partitions: {{ cluster_settings.default_partitions }}
+      partition_retention_bytes: {{ cluster_settings.partition_retention_bytes }}
+      partition_retention_hours: {{ cluster_settings.partition_retention_hours }}
+      kafka_brokers_jvm_xmx: {{ cluster_settings.kafka_brokers_jvm_xmx }}
+  {% endfor %}
+{% endif %}
+
+
+{% if services.shiva is defined and services.shiva|length %}
+{% set global_settings = services.shiva.settings %}
+{% set clusters = services.shiva.clusters %}
+shiva:
+  shiva_version: {{ versions.shiva }}
+  clusters:
+  {% for cluster_name, cluster in clusters.items() %}
+    {%- set cluster_settings = cluster.settings %}
+    {%- set servers = cluster.servers %}
+      {{ cluster_name }}:
+        storage: {{ cluster_settings.storage }}
+        reporters: {{ cluster_settings.reporter }}
+        servers:
+          {% for server_name, server in servers.items() %}
+          {% set server_settings = server.settings %}
+          {{ server_name }}:
+              runner: {{ server_settings.runner }}
+              can_be_master: {{ server_settings.can_be_master }}
+              tags: {{ server_settings.tags }}
+          {% endfor %}
+  {% endfor %}
+{% endif %}
+
+{%- if services.eelasticsearch is defined %}
+elasticsearch:
+  elasticsearch_version: {{ versions.elastic }}
+{% endif %}
+
+{%- if services.kkibana is defined %}
+kibana:
+  kibana_version: {{ versions.elastic }}
+{% endif %}
+
+
+{%- if services.gateway is defined %}
+shiva:
+  gateway_version: {{ versions.gateway }}
+{% endif %}
+
+{%- if services.toto is defined and services.toto|length %}
+{%- set global_settings = services.toto.settings %}
+{%- set clusters = services.toto.clusters %}
+zookeeper:
+  zookeeper_version: {{ versions.toto }}
+  clusters:
+  {% for cluster_name, cluster in clusters.items() %}
+    {%- set cluster_settings = cluster.settings %}
+    {%- set servers = cluster.servers %}
+  {% endfor %}
+{% endif %}
