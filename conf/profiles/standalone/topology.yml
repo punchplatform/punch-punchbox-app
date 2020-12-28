@@ -3,5 +3,7 @@ servers:
     localhost:
         services:
         - service: zookeeper
+        - service: shiva
+        - service: kafka
         users:
         - user: localusername

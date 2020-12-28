@@ -9,6 +9,14 @@ platform:
   production_interface: lo0
   admin_interface: lo0
 
+reporters:
+  common:
+    type: kafka
+    brokers: common
+    encoding: json
+    reporting_interval: 30
+    topic: platform-events
+
 services:
   zookeeper:
     settings:
