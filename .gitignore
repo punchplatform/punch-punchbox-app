@@ -1,7 +1,5 @@
-.mypy_cache/*
 .cache/*
 .venv/*
-dist/*
-__pycache__/*
+venv/*
 *.pyc
 .idea/*
