@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from punchbox.punchbox_cli import PunchBoxCli
-from punchbox.deploy.deploy import deploy
-from punchbox.generate.generate import generate
-from punchbox.workspace.workspace import workspace
-from typing import Callable
+from typing import Any
+
+from rich.traceback import install
+
+from punchbox.deploy import deploy
+from punchbox.generate import generate
+from punchbox.punch_entry_point import punchbox_cli
+from punchbox.workspace import workspace
+
+
+install()
 
 
 def main() -> None:
-    cli: Callable = PunchBoxCli.cli
 
-    cli.add_command(deploy)
-    cli.add_command(generate)
-    cli.add_command(workspace)
-
+    cli: Any = punchbox_cli.cli
+    cli.add_command(deploy.deploy)
+    cli.add_command(generate.generate)
+    cli.add_command(workspace.workspace)
     cli()
 
 

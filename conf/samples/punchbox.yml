@@ -1,0 +1,19 @@
+env:
+  deployer: /target/punch-deployer-6.3.0-SNAPSHOT.zip
+  type: standalone
+  vagrantfile: /tmp/hello12345/vagrant/Vagrantfile
+  workspace: /tmp/hello12345
+punch:
+  blueprint: /tmp/hello12345/conf/punchbox/generated/blueprint.yml
+  deployment_settings: /tmp/hello12345/pp-conf/deployment-settings.yml
+  deployment_settings_template: /tmp/hello12345/conf/punchbox/generated/conf/deployment_templates/deployment.settings.j2
+  punchplatform_deployment_settings: /tmp/hello12345/pp-conf/punchplatform-deployment.settings
+  resolv_conf: /tmp/hello12345/pp-conf/resolv.hjson
+  resolv_conf_template: /tmp/hello12345/conf/punchbox/generated/conf/deployment_templates/resolv.hjson.j2
+  user_resolver: /tmp/hello12345/conf/punchbox/resolv.yml
+  user_settings: /tmp/hello12345/conf/punchbox/settings.yml
+  user_topology: /tmp/hello12345/conf/punchbox/topology.yml
+vagrant:
+  template: /tmp/hello12345/vagrant/Vagrantfile.j2
+  vagrantfile: /tmp/hello12345/vagrant/Vagrantfile
+version: '1.0'

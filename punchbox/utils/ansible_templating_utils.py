@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import shutil
-import subprocess
-from typing import Dict, List
-import click
-import logging
-from copy import deepcopy
-import jinja2
 import json
-import yaml
-import sys
 import os
 import re
 import socket
+import subprocess
+import sys
+
+from typing import Dict
+
+import jinja2
+import yaml
+
 from punchbox import components
-from punchbox import services
+
 
 # This main module is used to render a jinja2 template
 # the rendering environement is loaded with provided customisation data that
@@ -101,10 +100,6 @@ def to_basename(path):
 
 def to_nice_yaml(a, indentation=4, line_breaker="\n", optional_indent=0, *args, **kw):
     """Make verbose, human readable yaml"""
-    try:
-        import simplejson
-    except ImportError:
-        pass
     transformed = yaml.safe_dump(
         a, indent=indentation, default_flow_style=False, line_break=line_breaker
     )
@@ -128,7 +123,7 @@ def to_nice_json(a, indent=4, *args, **kw):
         else:
             try:
                 major = int(simplejson.__version__.split(".")[0])
-            except:
+            except Exception:
                 pass
             else:
                 if major >= 2:
@@ -140,7 +135,7 @@ def to_nice_json(a, indent=4, *args, **kw):
         return json.dumps(
             a, indent=indent, sort_keys=True, cls=AnsibleJSONEncoder, *args, **kw
         )
-    except:
+    except Exception:
         # Fallback to the to_json filter
         return to_json(a, *args, **kw)
 

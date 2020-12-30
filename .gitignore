@@ -1,5 +1,11 @@
+target/*
+dist/*
 .cache/*
 .venv/*
 venv/*
 *.pyc
 .idea/*
+.pytest_cache/*
+.mypy_cache/*
+.coverage
+.tox

@@ -1,42 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 import json
 import os
-import shutil
+
+from pathlib import Path
+from typing import Union
+
 import click
 import yaml
-from click_help_colors import HelpColorsGroup
-from copy import deepcopy
-from os.path import dirname
-from pathlib import Path
 
-from punchbox import generate
+from typing_extensions import Final
 
-
-def copy_to_workspace(src, dst) -> None:
-    """Copy a reference file to
-
-    :param src: the src path
-    :param dst: the destination path
-    :return: None
-    """
-    if os.path.exists(os.path.abspath(dst)):
-        click.echo("overwriting " + dst)
-    shutil.copy(os.path.abspath(src), os.path.abspath(dst))
-
-
-def create_dir_if_needed(*dirs) -> None:
-    """Create a bunch of directories
-
-    :param dirs: one or several directory paths
-    :return: None
-    """
-    for d in dirs:
-        if not os.path.exists(d):
-            os.makedirs(d)
+from punchbox.common_lib.command_meta.command_option import CommandOption
+from punchbox.common_lib.command_meta.commands import Commands
+from punchbox.common_lib.data_classes import punchbox_configuration
+from punchbox.common_lib.data_classes.source_hierarchy import SourceHierarchy
+from punchbox.common_lib.data_classes.workspace_configuration import (
+    WorkspaceConfiguration,
+)
+from punchbox.common_lib.data_classes.workspace_hierarchy import WorkspaceHierarchy
+from punchbox.common_lib.runtime_meta import environment
+from punchbox.generate.generate import generate_blueprint
+from punchbox.generate.generate import generate_deployment
+from punchbox.generate.generate import generate_vagrantfile
+from punchbox.punch_entry_point import cli_configuration
+from punchbox.punch_entry_point.cli_configuration import PunchLogger
+from punchbox.utils.punch_file_utils import PunchFileUtils
+from punchbox.workspace import workspace_helper
 
 
-@click.group(cls=HelpColorsGroup, help_headers_color="blue", help_options_color="green")
+@click.group(**cli_configuration.CliConfiguration.click_command_settings())
 def workspace() -> None:
     """
     Setup your workspace.
@@ -53,27 +47,36 @@ def workspace() -> None:
 
     \f
     """
-    pass
+    ...
 
 
-@workspace.command(name="create")
-@click.option("--deployer",
-              required=True,
-              type=click.Path(exists=True),
-              help="path to the punch deployer folder")
-@click.option("--workspace",
-              required=False,
-              default=str(Path.home()) + '/punchbox-workspace',
-              type=click.Path(),
-              help="the punchbox workspace")
-@click.option("--profile",
-              required=False,
-              default='standalone',
-              type=click.Path(),
-              help="the target platform topology  profile. Two profiles are supported right now, 'standalone' and"
-                   "'sample'. By default the standalone is picked."
-              )
-def create_workspace(deployer, workspace, profile):
+@workspace.command(name=Commands.CREATE_CMD)
+@click.option(
+    CommandOption.DEPLOYER_OPT,
+    required=True,
+    type=click.Path(exists=True),
+    help="path to the punch deployer folder",
+)
+@click.option(
+    CommandOption.WORKSPACE_OPT,
+    required=False,
+    default=f"{str(Path.home())}/punchbox-workspace",
+    type=click.Path(),
+    help="the punchbox workspace",
+)
+@click.option(
+    CommandOption.PROFILE_OPT,
+    required=False,
+    default="standalone",
+    type=click.Path(),
+    help="the target platform topology  profile. Two profiles are supported right now, 'standalone' and"
+    "'sample'. By default the standalone is picked.",
+)
+def create_workspace(
+    deployer: Union[str, bytes, os.PathLike],
+    workspace: Union[str, bytes, os.PathLike],
+    profile: Union[str, bytes, os.PathLike],
+) -> None:
     """
     Create a punchbox working space.
 
@@ -89,104 +92,69 @@ def create_workspace(deployer, workspace, profile):
     Should your work with a long-lived workspace we strongly suggest you use git to keep
     track of the changes.
     """
-    pb_dir = dirname(dirname(os.path.realpath(__file__)))
-    workspace_top_conf_dir = workspace + "/conf"
-    workspace_punchbox_conf_dir = workspace_top_conf_dir + '/punchbox'
-    workspace_generated_conf_dir = workspace_punchbox_conf_dir + "/generated"
-    workspace_pp_conf_dir = workspace + "/pp-conf"
-    workspace_vagrant_dir = workspace + "/vagrant"
-    workspace_template_dir = workspace_punchbox_conf_dir + '/conf/deployment_templates'
-
-    src_settings = pb_dir + '/conf/profiles/' + profile + '/settings.yml'
-    src_topology = pb_dir + '/conf/profiles/' + profile + '/topology.yml'
-    src_resolv = pb_dir + '/conf/profiles/' + profile + '/resolv.yml'
-    src_vagrant_j2 = pb_dir + '/conf/vagrant/Vagrantfile.j2'
-    dst_resolv = workspace_top_conf_dir + '/resolv.yml'
-    dst_settings = workspace_top_conf_dir + '/settings.yml'
-    dst_topology = workspace_top_conf_dir + '/topology.yml'
-    dst_vagrant_j2 = workspace + '/vagrant/Vagrantfile.j2'
-
-    # Generated files when executing the 'build' command
-    target_vagrant_file = workspace_vagrant_dir + '/Vagrantfile'
-    target_blueprint_yml = workspace_generated_conf_dir + '/blueprint.yml'
-    target_workspace_yml = workspace_punchbox_conf_dir + "/punchbox.yml"
-    target_deployment_settings_yml = workspace_pp_conf_dir + '/deployment-settings.yml'
-    target_legacy_deployment_settings = workspace_pp_conf_dir + '/punchplatform-deployment.settings'
-    target_deployment_settings_yml_j2 = workspace_template_dir + '/deployment.settings.j2'
-
-    if not os.path.exists(target_workspace_yml) or click.confirm('Overwrite your configurations ?'):
-        create_dir_if_needed(workspace_template_dir, workspace_template_dir, workspace_pp_conf_dir,
-                             workspace_vagrant_dir, workspace_generated_conf_dir)
-        copy_to_workspace(src_topology, dst_topology)
-        copy_to_workspace(src_settings, dst_settings)
-        copy_to_workspace(src_resolv, dst_resolv)
-        copy_to_workspace(src_vagrant_j2, dst_vagrant_j2)
-
-        workspace_activate_file = os.path.abspath(workspace + '/activate.sh')
-        if os.path.exists(workspace_activate_file):
-            print("cleaning " + workspace_activate_file)
-            os.remove(workspace_activate_file)
+    workspace_hierarchy: WorkspaceHierarchy = WorkspaceHierarchy(str(workspace))
+    pb_dir: Final[str] = environment.Environment.punchbox_install_dir()
+    source_hierarchy: SourceHierarchy = SourceHierarchy(
+        source_settings_dir=pb_dir, profile=str(profile)
+    )
+    if not os.path.exists(
+        workspace_hierarchy.target_workspace_yml_file
+    ) or click.confirm("Overwrite your configurations ?"):
+        workspace_helper.WorkspaceHelper.create_workspace_hierarchy(workspace_hierarchy)
+        workspace_helper.WorkspaceHelper.duplicate_required_files(
+            source_hierarchy, workspace_hierarchy
+        )
+        workspace_activate_file = os.path.abspath(workspace_hierarchy.activate_sh_file)
+        stdout_result: str = PunchFileUtils.remove_file_if_exist(
+            workspace_activate_file
+        )
+        PunchLogger().logger.info(
+            f"[bold green]{stdout_result}[/]", extra={"markup": True}
+        )
 
         # populate the user workspace with the required starting configuration files.
-
-        template_dir = os.path.abspath(pb_dir + '/conf/deployment_templates/')
-        src_files = os.listdir(template_dir)
-        for file_name in src_files:
-            full_file_name = os.path.join(template_dir, file_name)
-            if os.path.isfile(full_file_name):
-                shutil.copy(full_file_name, os.path.abspath(workspace_template_dir))
+        workspace_helper.WorkspaceHelper.apply_templating_required_files(
+            source_hierarchy, workspace_hierarchy
+        )
 
         # and finally create the activate.sh file
-        with open(workspace_activate_file, "w+") as activateFile:
-            activateFile.write("export PATH=" + os.path.abspath(deployer) + "/bin:$PATH\n")
-            activateFile.write("export PUNCHPLATFORM_CONF_DIR=" + workspace_pp_conf_dir + "\n")
+        PunchFileUtils.write_unicode_as_text_file(
+            workspace_activate_file,
+            f"export PATH={os.path.abspath(str(deployer))}/bin:$PATH \n"
+            f"export PUNCHPLATFORM_CONF_DIR={workspace_hierarchy.pp_conf_dir} \n",
+        )
 
         # All done, generate the main punchbox yaml file. That file will be used
         # for all the subsequent build phases.
-        workspace_type = 'deployed'
-        if profile is 'standalone':
-            workspace_type = 'standalone'
+        workspace_config: WorkspaceConfiguration = WorkspaceConfiguration(
+            profile=str(profile)
+        )
 
-        dictionary = {
-            'version': '1.0',
-            'env': {
-                "deployer": deployer,
-                "type": workspace_type,
-                "workspace": os.path.abspath(workspace),
-                "vagrantfile": os.path.abspath(target_vagrant_file)
-            },
-            'vagrant': {
-                "template": os.path.abspath(dst_vagrant_j2),
-                "vagrantfile": os.path.abspath(target_vagrant_file)
-            },
-            'punch': {
-                "blueprint": os.path.abspath(target_blueprint_yml),
-                "user_topology": os.path.abspath(dst_topology),
-                "user_settings": os.path.abspath(dst_settings),
-                "user_resolver": os.path.abspath(dst_resolv),
-                "deployment_settings_template": os.path.abspath(target_deployment_settings_yml_j2),
-                "deployment_settings": os.path.abspath(target_deployment_settings_yml),
-                "punchplatform_deployment_settings": os.path.abspath(target_legacy_deployment_settings),
-                "resolv_conf": os.path.abspath(workspace_pp_conf_dir + '/resolv.hjson'),
-                "resolv_conf_template": os.path.abspath(workspace_template_dir + '/resolv.hjson.j2')
-            }
-        }
-        with open(target_workspace_yml, 'w+') as outfile:
-            yaml.dump(dictionary, outfile)
-        click.echo("workspace created")
+        punchbox: punchbox_configuration.PunchboxConfiguration = punchbox_configuration.PunchboxConfiguration(
+            workspace_hierarchy, workspace_config.workspace_type, str(deployer)
+        )
+        PunchFileUtils.write_dict_as_yaml(
+            workspace_hierarchy.target_workspace_yml_file,
+            punchbox.punchbox_configuration_dict,
+        )
+        PunchLogger().logger.info(
+            "[bold green]workspace created[/]", extra={"markup": True}
+        )
 
 
-@workspace.command(name="build")
-@click.option("--workspace",
-              required=False,
-              default=str(Path.home()) + '/punchbox-workspace',
-              type=click.Path(),
-              help="the punchbox workspace")
-@click.option('--yes', '-y', is_flag=True, default=True, help="confirmed mode")
+@workspace.command(name=Commands.BUILD_CMD)
+@click.option(
+    CommandOption.WORKSPACE_OPT,
+    required=False,
+    default=f"{str(Path.home())}/punchbox-workspace",
+    type=click.Path(),
+    help="the punchbox workspace",
+)
+@click.option(*CommandOption.YES_OPT, is_flag=True, default=True, help="confirmed mode")
 @click.pass_context
-def build_workspace(ctx, workspace, yes):
+def build_workspace(ctx, workspace: Union[str, bytes, os.PathLike], yes: bool) -> None:
     """
-    Build you workspace.
+    Build your workspace.
 
     Once created, a few configuration files must be generated from
     various templates. This command make your workspace ready to move
@@ -195,63 +163,87 @@ def build_workspace(ctx, workspace, yes):
     By default this command is interactive and prompt before generating a file.
     If you want it to be silent use the confirmed mode.
     """
-    with open(workspace + "/conf/punchbox/punchbox.yml") as infile:
-        conf = yaml.load(infile.read(), Loader=yaml.SafeLoader)
+    conf: punchbox_configuration.Punchbox = PunchFileUtils.read_punchbox_settings_file(
+        f"{str(workspace)}/conf/punchbox/punchbox.yml"
+    )
 
-    try:
-        version = conf['version']
-    except KeyError:
-        click.echo('invalid workspace ' + workspace)
-        raise click.Abort()
-
-    with open(conf['punch']['user_settings']) as user_settings:
+    with open(conf.punch.user_settings, "rb") as user_settings:
         user_settings_dict = yaml.load(user_settings.read(), Loader=yaml.SafeLoader)
-        if 'vagrant' in user_settings_dict:
-            if not yes or click.confirm('generate vagrantfile ' + conf['vagrant']['vagrantfile'] + ' ?'):
-                with open(conf['punch']['user_topology']) as topology, \
-                        open(conf['punch']['user_settings']) as settings, \
-                        open(conf['vagrant']['vagrantfile'], 'w+') as vagrantfile:
-                    print("  punchbox generate vagrantfile \n" +
-                          "    --settings " + conf['punch']['user_settings'] + "  \n" +
-                          "    --topology " + conf['punch']['user_topology'] + "  \n" +
-                          "    --template " + conf['vagrant']['template'] + "  \n" +
-                          "    --output " + conf['vagrant']['vagrantfile'] + "\n")
-                    ctx.invoke(generate_commands.generate_vagrantfile, settings=settings, topology=topology,
-                               template=conf['vagrant']['template'], output=vagrantfile)
+        if "vagrant" in user_settings_dict:
+            if not yes or click.confirm(
+                f"generate vagrantfile {conf.vagrant.vagrantfile} ?"
+            ):
+                with open(conf.punch.user_topology, "rb") as topology, open(
+                    conf.punch.user_settings, "rb"
+                ) as settings, open(conf.vagrant.vagrantfile, "wb+") as vagrantfile:
+                    PunchLogger().logger.info(
+                        f"  Punchbox generate vagrantfile \n"
+                        f"    --settings {conf.punch.user_settings}  \n"
+                        f"    --topology {conf.punch.user_topology} \n"
+                        f"    --template {conf.vagrant.template} \n"
+                        f"    --output {conf.vagrant.vagrantfile} \n",
+                        extra={"markup": True},
+                    )
+                    ctx.invoke(
+                        generate_vagrantfile,
+                        settings=settings,
+                        topology=topology,
+                        template=conf.vagrant.template,
+                        output=vagrantfile,
+                    )
 
-    if not yes or click.confirm('generate platform blueprint ' + conf['punch']['blueprint'] + ' ?'):
-        with open(conf['punch']['user_topology'], "r") as topology, \
-                open(conf['punch']['blueprint'], "w+") as output, \
-                open(conf['punch']['user_settings'], "r") as settings:
-            print("  punchbox generate blueprint \n" +
-                  "    --deployer " + conf['env']['deployer'] + "  \n" +
-                  "    --topology " + conf['punch']['user_topology'] + "  \n" +
-                  "    --settings " + conf['punch']['user_settings'] + "  \n" +
-                  "    --output " + conf['punch']['blueprint'] + "\n")
-            ctx.invoke(generate_commands.generate_blueprint,
-                       deployer=conf['env']['deployer'],
-                       topology=topology,
-                       settings=settings,
-                       output=output)
+    if not yes or click.confirm(
+        f"generate platform blueprint {conf.punch.blueprint} ?"
+    ):
+        with open(conf.punch.user_topology, "rb") as topology, open(
+            conf.punch.blueprint, "wb+"
+        ) as output, open(conf.punch.user_settings, "rb") as settings:
+            PunchLogger().logger.info(
+                f"  punchbox generate blueprint \n"
+                f"    --deployer {conf.env.deployer} \n"
+                f"    --topology {conf.punch.user_topology} \n"
+                f"    --settings {conf.punch.user_settings} \n"
+                f"    --output {conf.punch.blueprint} \n",
+                extra={"markup": True},
+            )
+            ctx.invoke(
+                generate_blueprint,
+                deployer=conf.env.deployer,
+                topology=topology,
+                settings=settings,
+                output=output,
+            )
 
-    if not yes or click.confirm('generate deployment settings ' + conf['punch']['deployment_settings'] + ' ?'):
-        with open(conf['punch']['blueprint'], "r") as blueprint, \
-                open(conf['punch']['deployment_settings'], "w+") as output:
-            print("  punchbox generate deployment-settings \\\n" +
-                  "    --blueprint " + conf['punch']['blueprint'] + "  \\\n" +
-                  "    --template " + conf['punch']['deployment_settings_template'] + "  \\\n" +
-                  '    --output ' + conf['punch']['deployment_settings'] + "\n")
-            ctx.invoke(generate_commands.generate_deployment,
-                       blueprint=blueprint,
-                       template=conf['punch']['deployment_settings_template'],
-                       output=output)
+    if not yes or click.confirm(
+        f"generate deployment settings {conf.punch.deployment_settings} ?"
+    ):
+        with open(conf.punch.blueprint, "rb") as blueprint, open(
+            conf.punch.deployment_settings, "wb+"
+        ) as output:
+            PunchLogger().logger.info(
+                f"  punchbox generate deployment-settings \n"
+                f"    --blueprint {conf.punch.blueprint} \n"
+                f"    --template {conf.punch.deployment_settings_template} \n"
+                f"    --output {conf.punch.deployment_settings} \n",
+                extra={"markup": True},
+            )
+            ctx.invoke(
+                generate_deployment,
+                blueprint=blueprint,
+                template=conf.punch.deployment_settings_template,
+                output=output,
+            )
 
-        with open(conf['punch']['deployment_settings'], 'r') as yaml_in, \
-                open(conf['punch']['punchplatform_deployment_settings'], "w+") as json_out:
-            print("  backward compatibility generation : convert\n" +
-                  "    " + conf['punch']['deployment_settings'] + " into \n" +
-                  "            into \n" +
-                  "    " + conf['punch']['punchplatform_deployment_settings'] + "\n")
+        with open(conf.punch.deployment_settings, "rb") as yaml_in, open(
+            conf.punch.punchplatform_deployment_settings, "w+"
+        ) as json_out:
+            PunchLogger().logger.info(
+                f"  backward compatibility generation : \n"
+                f"             convert \n"
+                f"{conf.punch.deployment_settings} \n"
+                f"             into \n"
+                f"{conf.punch.punchplatform_deployment_settings} \n",
+                extra={"markup": True},
+            )
             yaml_object = yaml.load(yaml_in, Loader=yaml.SafeLoader)
-            # yaml_object = yaml.safe_load(yaml_in)
             json.dump(yaml_object, json_out)

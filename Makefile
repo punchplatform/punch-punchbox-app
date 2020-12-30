@@ -5,50 +5,53 @@ ifeq (, $(shell which python3))
  $(error "No python3 installed, it is required. Make sure you also install python3 venv")
 endif
 
+##@ Available targets:
 
-help:
-	@echo "all                       - rebuild everything from scratch with test and lint"
-	@echo "clean                     - remove all build, test, coverage and Python artifacts"
-	@echo "clean-pyc                 - remove Python file artifacts"
-	@echo "clean-test                - remove test and coverage artifacts"
-	@echo "build                     - generate source tar.gz, wheel and pex distributions"
-	@echo "test               		 - run tests quickly with the default Python"
+.DEFAULT_GOAL := help
+.PHONY: all build lint test clean-package clean-pyc clean-test clean tox
 
-all: clean build test
+all: clean build test lint  ## rebuild everything from scratch with test and lint
 
-build: target/.distrib-built
+build: target/.distrib-built  ## generate source tar.gz, wheel and pex distributions
 
-test: target/.distrib-tested
+lint: target/.distrib-lint  ## performs PEP257 and PEP8 code style checking and uses black for non opinionated code style with mypy static checking
 
-clean-package:
+test: target/.distrib-test  ## run tests quickly with the default Python
+
+clean-package:  ## removed built distribution
 	$(info ************  CLEANING DISTRIBUTION  ************)
 	rm -rf dist
 	rm -rf target
 	-rm -rf target/.distrib-built
 
-clean-pyc:
+clean-pyc:  ## remove Python file artifacts
 	$(info ************  CLEANING TEMPORARY FILES  ************)
 	-find . -name '*.pyc' -exec rm -f {} +
 	-find . -name '*.pyo' -exec rm -f {} +
 	-find . -name '*~' -exec rm -f {} +
 	-find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test:
+clean-test:  ## remove all tests related cache
 	$(info ************  CLEANING TEST REPORTS  ************)
 	rm -fr .tox/
 	rm -fr .coverage
 	rm -fr htmlcov/
 	rm -rf target/.distrib-tested
+	rm -rf .pytest_cache
+	rm -rf .mypy_cache
 
-clean: clean-package clean-pyc clean-test
+clean: clean-package clean-pyc clean-test  ## remove all build, test, coverage and Python artifacts
 	$(info ************  CLEAN  ************)
 	rm -rf target
 	rm -rf .venv
 	rm -rf dist
 	rm -rf .cache
 
-test-cli:
+test-cli: target/.venv-created  ## run the punchbox cli
 	@. ${DIR}/.venv/bin/activate && poetry run punchbox
+
+tox: target/.venv-created  ## validate that application command group (dev only)
+	@. ${DIR}/.venv/bin/activate && poetry run tox
 
 target/.venv-created:
 	$(info ************  CREATE PYTHON 3 .venv  VIRTUALENV  ************)
@@ -73,9 +76,23 @@ target/.distrib-built: target/.venv-created target/.venv-dependencies ${MYSOURCE
 	@. ${DIR}/.venv/bin/activate && poetry run pex ${DIR} -c punchbox -o dist/pex/punchbox -v
 	touch $@
 
-target/.distrib-tested: target/.venv-created target/.distrib-built
-	$(info ************  POETRY TEST  ************)
+target/.distrib-lint: target/.venv-created ${MYSOURCES}
+	$(info ************  Checking: code covertage, auto code formatting PEP8 PEP257 and static type  ************)
+	@. ${DIR}/.venv/bin/activate && poetry run pytest --cov=punchbox --cov-config .coveragerc tests/ -sq
+	@. ${DIR}/.venv/bin/activate && poetry run isort .
+	@. ${DIR}/.venv/bin/activate && poetry run black .
 	@. ${DIR}/.venv/bin/activate && poetry run flake8
-	@. ${DIR}/.venv/bin/activate && poetry run black punchbox
-	@. ${DIR}/.venv/bin/activate && poetry run mypy -p punchbox --python-version 3.6 --ignore-missing
+	@. ${DIR}/.venv/bin/activate && poetry run mypy -p punchbox
 	touch $@
+
+target/.distrib-test: target/.venv-created ${MYSOURCES}
+	$(info ************  Pytest Unit testing  ************)
+	@. ${DIR}/.venv/bin/activate && poetry run pytest
+	touch $@
+
+##@ Helpers
+
+.PHONY: help
+
+help:  ## Display help menu
+	@awk 'BEGIN {FS = ":.*##"; printf "\033[36m\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

@@ -5,18 +5,34 @@ https://github.com/punchplatform/punchbox project. We plan to make it
 the official tool to deploy various sort of punch: standalone, production,
 or even hybrids. 
 
-This project uses [poetry](https://python-poetry.org/)
-To run it simply type in : 
+This project uses [poetry](https://python-poetry.org/) as it's dependency manager and PEX for distribution.
 
-```sh
-poetry run python punchbox.py
+## Prerequisites
+
+Before proceeding, you should have `python == 3.6.8` installed correctly. If you are using `pyenv`, make sure to have 
+this version of python installed:
+
+```shell
+pyenv install 3.6.8
 ```
 
-Should you miss some dependencies,
-```sh
-poetry install
+## Workflow
+
+Use the provided `Makefile` to start a clean development environment.
+
+```shell
+# Run punchbox in development mode
+
+source .venv/bin/activate
+poetry run punchbox
+
+# or
+
+make test-cli
+
+# After each modification be sure to run
+make lint
+
+# Before pushing
+make all
 ```
-
-## Use Guide
-
-The punchbox requires you have a punchplatform-deployer package. 
