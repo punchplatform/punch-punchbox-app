@@ -1,5 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import shutil
 import subprocess
 from typing import Dict, List
+import click
+import logging
+from copy import deepcopy
 import jinja2
 import json
 import yaml
@@ -7,12 +14,12 @@ import sys
 import os
 import re
 import socket
+from punchbox import components
+from punchbox import services
 
 # This main module is used to render a jinja2 template
-# the rendering environment is loaded with provided customisation data that
-# must be provided as a json dictionary string
-
-from utils import components
+# the rendering environement is loaded with provided customisation data that
+# must be provided as a json dictionnary string
 
 
 class AnsibleJSONEncoder(json.JSONEncoder):

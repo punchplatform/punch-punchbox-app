@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import json
 import os
 import shutil
@@ -8,7 +10,7 @@ from copy import deepcopy
 from os.path import dirname
 from pathlib import Path
 
-from generate import generate_commands
+from punchbox import generate
 
 
 def copy_to_workspace(src, dst) -> None:
