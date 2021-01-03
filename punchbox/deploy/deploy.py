@@ -14,7 +14,7 @@ from punchbox.common_lib.data_classes.punchbox_configuration import Punchbox
 from punchbox.common_lib.runtime_meta import state_code
 from punchbox.punch_entry_point import cli_configuration
 from punchbox.punch_entry_point.cli_configuration import PunchLogger
-from punchbox.utils.punch_file_utils import PunchFileUtils
+from punchbox.utils.file import File
 
 
 @click.group(**cli_configuration.CliConfiguration.click_command_settings())
@@ -40,7 +40,7 @@ def deploy_audit(ctx, workspace: Union[str, bytes, os.PathLike], verbose: bool) 
     """
     Audit your configuration before going any further.
     """
-    conf: Punchbox = PunchFileUtils.read_punchbox_settings_file(
+    conf: Punchbox = File.read_punchbox_settings_file(
         f"{str(workspace)}/conf/punchbox/punchbox.yml"
     )
 

@@ -11,7 +11,7 @@ from punchbox.common_lib.runtime_meta.key import Key
 from punchbox.punch_entry_point.cli_configuration import PunchLogger
 
 
-class PunchFileUtils(object):
+class File(object):
     """Static class"""
 
     def __init__(self) -> None:
@@ -57,7 +57,7 @@ class PunchFileUtils(object):
 
     @staticmethod
     def read_punchbox_settings_file(path: str) -> punchbox_configuration.Punchbox:
-        conf: dict = PunchFileUtils.read_file_yaml_as_dict(path)
+        conf: dict = File.read_file_yaml_as_dict(path)
         vagrant: punchbox_configuration.Vagrant = punchbox_configuration.Vagrant(
             **conf[Key.VAGRANT]
         )
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     # examples of using PunchUtils
     path_punchbox_yml: str = "./conf/samples/punchbox.yml"
-    punchbox_yml: punchbox_configuration.Punchbox = PunchFileUtils.read_punchbox_settings_file(
+    punchbox_yml: punchbox_configuration.Punchbox = File.read_punchbox_settings_file(
         path_punchbox_yml
     )
     print(punchbox_yml)

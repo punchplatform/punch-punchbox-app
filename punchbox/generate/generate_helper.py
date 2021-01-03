@@ -9,7 +9,7 @@ from typing import Optional
 
 import click
 
-from punchbox.utils import ansible_templating_utils
+from punchbox.utils import ansible
 
 
 def raise_if_platform_missing_else_return(
@@ -150,7 +150,7 @@ def compute_blueprint_versions(blueprint: Dict[str, Any], deployer_path: str) ->
     :param blueprint:
     :return:
     """
-    versions_dict = ansible_templating_utils.get_components_version(deployer_path)
+    versions_dict = ansible.get_components_version(deployer_path)
     for service_name, service in blueprint["services"].items():
         if "version" not in service["settings"]:
             if service_name in versions_dict:

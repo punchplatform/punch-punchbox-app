@@ -7,7 +7,7 @@ from rich.traceback import install
 
 from punchbox.deploy import deploy
 from punchbox.generate import generate
-from punchbox.punch_entry_point import punchbox_cli
+from punchbox.punch_entry_point import punchbox
 from punchbox.workspace import workspace
 
 
@@ -16,7 +16,7 @@ install()
 
 def main() -> None:
 
-    cli: Any = punchbox_cli.cli
+    cli: Any = punchbox.cli
     cli.add_command(deploy.deploy)
     cli.add_command(generate.generate)
     cli.add_command(workspace.workspace)

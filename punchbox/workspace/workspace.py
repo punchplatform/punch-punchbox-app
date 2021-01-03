@@ -26,7 +26,7 @@ from punchbox.generate.generate import generate_deployment
 from punchbox.generate.generate import generate_vagrantfile
 from punchbox.punch_entry_point import cli_configuration
 from punchbox.punch_entry_point.cli_configuration import PunchLogger
-from punchbox.utils.punch_file_utils import PunchFileUtils
+from punchbox.utils.file import File
 from punchbox.workspace import workspace_helper
 
 
@@ -105,9 +105,7 @@ def create_workspace(
             source_hierarchy, workspace_hierarchy
         )
         workspace_activate_file = os.path.abspath(workspace_hierarchy.activate_sh_file)
-        stdout_result: str = PunchFileUtils.remove_file_if_exist(
-            workspace_activate_file
-        )
+        stdout_result: str = File.remove_file_if_exist(workspace_activate_file)
         PunchLogger().info_green(stdout_result)
 
         # populate the user workspace with the required starting configuration files.
@@ -116,7 +114,7 @@ def create_workspace(
         )
 
         # and finally create the activate.sh file
-        PunchFileUtils.write_unicode_as_text_file(
+        File.write_unicode_as_text_file(
             workspace_activate_file,
             f"export PATH={os.path.abspath(str(deployer))}/bin:$PATH \n"
             f"export PUNCHPLATFORM_CONF_DIR={workspace_hierarchy.pp_conf_dir} \n",
@@ -131,7 +129,7 @@ def create_workspace(
         punchbox: punchbox_configuration.PunchboxConfiguration = punchbox_configuration.PunchboxConfiguration(
             workspace_hierarchy, workspace_config.workspace_type, str(deployer)
         )
-        PunchFileUtils.write_dict_as_yaml(
+        File.write_dict_as_yaml(
             workspace_hierarchy.target_workspace_yml_file,
             punchbox.punchbox_configuration_dict,
         )
@@ -159,7 +157,7 @@ def build_workspace(ctx, workspace: Union[str, bytes, os.PathLike], yes: bool) -
     By default this command is interactive and prompt before generating a file.
     If you want it to be silent use the confirmed mode.
     """
-    conf: punchbox_configuration.Punchbox = PunchFileUtils.read_punchbox_settings_file(
+    conf: punchbox_configuration.Punchbox = File.read_punchbox_settings_file(
         f"{str(workspace)}/conf/punchbox/punchbox.yml"
     )
 

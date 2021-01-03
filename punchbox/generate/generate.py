@@ -20,7 +20,7 @@ from punchbox.common_lib.command_meta.commands import Commands
 from punchbox.generate import generate_helper
 from punchbox.punch_entry_point import cli_configuration
 from punchbox.punch_entry_point.cli_configuration import PunchLogger
-from punchbox.utils import ansible_templating_utils
+from punchbox.utils import ansible
 
 
 @click.group(**cli_configuration.CliConfiguration.click_command_settings())
@@ -135,7 +135,7 @@ def generate_deployment(
         Once you have that file you are good to go to deploy your punch.
     """
     blueprint_dict = yaml.load(blueprint.read(), Loader=yaml.SafeLoader)
-    deployment_template = ansible_templating_utils.load_template(template)
+    deployment_template = ansible.load_template(template)
     try:
         output_yml = deployment_template.render(**blueprint_dict)
         if output is not None:
@@ -172,7 +172,7 @@ def generate_resolver(
         deploy the punch but can be empty.
     """
     blueprint_dict = yaml.load(blueprint.read(), Loader=yaml.SafeLoader)
-    deployment_template = ansible_templating_utils.load_template(template)
+    deployment_template = ansible.load_template(template)
     try:
         output_yml = deployment_template.render(**blueprint_dict)
         if output is not None:
@@ -235,7 +235,7 @@ def generate_vagrantfile(
         template = f"{punchbox_dir}/vagrant/Vagrantfile.j2"
         click.echo(f"using default vagrant template {template}")
 
-    template_jinja = ansible_templating_utils.load_template(template)
+    template_jinja = ansible.load_template(template)
     settings_dict = yaml.load(settings.read(), Loader=yaml.SafeLoader)["vagrant"]
     topology_dict = yaml.load(topology.read(), Loader=yaml.SafeLoader)
     rendered_template = template_jinja.render(**settings_dict, **topology_dict)

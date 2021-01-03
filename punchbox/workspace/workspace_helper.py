@@ -7,7 +7,7 @@ from typing import List
 
 from punchbox.common_lib.data_classes import source_hierarchy
 from punchbox.common_lib.data_classes import workspace_hierarchy
-from punchbox.utils.punch_file_utils import PunchFileUtils
+from punchbox.utils.file import File
 
 
 class WorkspaceHelper(object):
@@ -19,7 +19,7 @@ class WorkspaceHelper(object):
     def create_workspace_hierarchy(
         work_struct: workspace_hierarchy.WorkspaceHierarchy,
     ) -> None:
-        PunchFileUtils.create_dir_if_needed(
+        File.create_dir_if_needed(
             (
                 work_struct.template_dir,
                 work_struct.punchbox_conf_dir,
@@ -34,16 +34,16 @@ class WorkspaceHelper(object):
         source_struct: source_hierarchy.SourceHierarchy,
         work_struct: workspace_hierarchy.WorkspaceHierarchy,
     ) -> None:
-        PunchFileUtils.copy_to_workspace(
+        File.copy_to_workspace(
             source_struct.topology_yml_file, work_struct.dest_topology_yml_file,
         )
-        PunchFileUtils.copy_to_workspace(
+        File.copy_to_workspace(
             source_struct.settings_yml_file, work_struct.dest_settings_yml_file,
         )
-        PunchFileUtils.copy_to_workspace(
+        File.copy_to_workspace(
             source_struct.resolv_yml_file, work_struct.dest_resolv_yml_file,
         )
-        PunchFileUtils.copy_to_workspace(
+        File.copy_to_workspace(
             source_struct.vagrant_j2_file, work_struct.dest_vagrant_j2_file,
         )
 
@@ -58,6 +58,4 @@ class WorkspaceHelper(object):
             file_name: str = _file_name
             full_file_name: str = os.path.join(template_dir, file_name)
             if os.path.isfile(full_file_name):
-                PunchFileUtils.copy_to_workspace(
-                    full_file_name, work_struct.template_dir
-                )
+                File.copy_to_workspace(full_file_name, work_struct.template_dir)
