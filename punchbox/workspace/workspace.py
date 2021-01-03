@@ -108,9 +108,7 @@ def create_workspace(
         stdout_result: str = PunchFileUtils.remove_file_if_exist(
             workspace_activate_file
         )
-        PunchLogger().logger.info(
-            f"[bold green]{stdout_result}[/]", extra={"markup": True}
-        )
+        PunchLogger().info_green(stdout_result)
 
         # populate the user workspace with the required starting configuration files.
         workspace_helper.WorkspaceHelper.apply_templating_required_files(
@@ -137,9 +135,7 @@ def create_workspace(
             workspace_hierarchy.target_workspace_yml_file,
             punchbox.punchbox_configuration_dict,
         )
-        PunchLogger().logger.info(
-            "[bold green]workspace created[/]", extra={"markup": True}
-        )
+        PunchLogger().info_green(f"Workspace created")
 
 
 @workspace.command(name=Commands.BUILD_CMD)
@@ -176,13 +172,12 @@ def build_workspace(ctx, workspace: Union[str, bytes, os.PathLike], yes: bool) -
                 with open(conf.punch.user_topology, "rb") as topology, open(
                     conf.punch.user_settings, "rb"
                 ) as settings, open(conf.vagrant.vagrantfile, "wb+") as vagrantfile:
-                    PunchLogger().logger.info(
+                    PunchLogger().info_green(
                         f"  Punchbox generate vagrantfile \n"
                         f"    --settings {conf.punch.user_settings}  \n"
                         f"    --topology {conf.punch.user_topology} \n"
                         f"    --template {conf.vagrant.template} \n"
-                        f"    --output {conf.vagrant.vagrantfile} \n",
-                        extra={"markup": True},
+                        f"    --output {conf.vagrant.vagrantfile} \n"
                     )
                     ctx.invoke(
                         generate_vagrantfile,
@@ -198,13 +193,12 @@ def build_workspace(ctx, workspace: Union[str, bytes, os.PathLike], yes: bool) -
         with open(conf.punch.user_topology, "rb") as topology, open(
             conf.punch.blueprint, "wb+"
         ) as output, open(conf.punch.user_settings, "rb") as settings:
-            PunchLogger().logger.info(
+            PunchLogger().info_green(
                 f"  punchbox generate blueprint \n"
                 f"    --deployer {conf.env.deployer} \n"
                 f"    --topology {conf.punch.user_topology} \n"
                 f"    --settings {conf.punch.user_settings} \n"
-                f"    --output {conf.punch.blueprint} \n",
-                extra={"markup": True},
+                f"    --output {conf.punch.blueprint} \n"
             )
             ctx.invoke(
                 generate_blueprint,
@@ -220,12 +214,11 @@ def build_workspace(ctx, workspace: Union[str, bytes, os.PathLike], yes: bool) -
         with open(conf.punch.blueprint, "rb") as blueprint, open(
             conf.punch.deployment_settings, "wb+"
         ) as output:
-            PunchLogger().logger.info(
+            PunchLogger().info_green(
                 f"  punchbox generate deployment-settings \n"
                 f"    --blueprint {conf.punch.blueprint} \n"
                 f"    --template {conf.punch.deployment_settings_template} \n"
-                f"    --output {conf.punch.deployment_settings} \n",
-                extra={"markup": True},
+                f"    --output {conf.punch.deployment_settings} \n"
             )
             ctx.invoke(
                 generate_deployment,
@@ -237,13 +230,12 @@ def build_workspace(ctx, workspace: Union[str, bytes, os.PathLike], yes: bool) -
         with open(conf.punch.deployment_settings, "rb") as yaml_in, open(
             conf.punch.punchplatform_deployment_settings, "w+"
         ) as json_out:
-            PunchLogger().logger.info(
+            PunchLogger().info_green(
                 f"  backward compatibility generation : \n"
                 f"             convert \n"
                 f"{conf.punch.deployment_settings} \n"
                 f"             into \n"
-                f"{conf.punch.punchplatform_deployment_settings} \n",
-                extra={"markup": True},
+                f"{conf.punch.punchplatform_deployment_settings} \n"
             )
             yaml_object = yaml.load(yaml_in, Loader=yaml.SafeLoader)
             json.dump(yaml_object, json_out)

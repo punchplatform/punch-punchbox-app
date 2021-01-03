@@ -13,6 +13,8 @@ class Environment(object):
         str
     ] = "PUNCHPLATFORM_PUNCHBOX_INSTALL_DIR"
 
+    PUNCHPLATFORM_PUNCHBOX_LOG_LEVEL: ClassVar[str] = "PUNCHPLATFORM_PUNCHBOX_LOG_LEVEL"
+
     def __init__(self) -> None:
         """
         static class
@@ -42,3 +44,11 @@ class Environment(object):
         if configuration_directory is None:
             configuration_directory = os.getcwd()
         return configuration_directory
+
+    @staticmethod
+    def punchbox_log_level() -> str:
+        """
+        Configure logger level with ENV
+        by default return NOTSET
+        """
+        return os.getenv(Environment.PUNCHPLATFORM_PUNCHBOX_LOG_LEVEL, "NOTSET")

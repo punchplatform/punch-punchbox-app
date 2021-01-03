@@ -10,9 +10,11 @@ endif
 .DEFAULT_GOAL := help
 .PHONY: all build lint test clean-package clean-pyc clean-test clean tox
 
-all: clean build test lint  ## rebuild everything from scratch with test and lint
+all: clean build test lint package  ## rebuild everything from scratch with test, lint then generate a distribution
 
-build: target/.distrib-built  ## generate source tar.gz, wheel and pex distributions
+build: target/.distrib-built  ## install needed modules for development, tests, linting...
+
+package: target/.distrib-package  ## generate the pex archive that will be used as distribution
 
 lint: target/.distrib-lint  ## performs PEP257 and PEP8 code style checking and uses black for non opinionated code style with mypy static checking
 
@@ -71,24 +73,25 @@ target/.venv-dependencies: target/.venv-created pyproject.toml poetry.toml poetr
 target/.distrib-built: target/.venv-created target/.venv-dependencies ${MYSOURCES}
 	$(info ************  POETRY BUILD DISTRIBUTION AND UPDATE VIRTUALENV ************)
 	$(echo MYSOURCES=${MYSOURCES})
-	rm -rf dist
 	@. ${DIR}/.venv/bin/activate && poetry build
-	@. ${DIR}/.venv/bin/activate && poetry run pex ${DIR} -c punchbox -o dist/pex/punchbox -v
 	touch $@
 
-target/.distrib-lint: target/.venv-created ${MYSOURCES}
+target/.distrib-lint: target/.venv-created
 	$(info ************  Checking: code covertage, auto code formatting PEP8 PEP257 and static type  ************)
-	@. ${DIR}/.venv/bin/activate && poetry run pytest --cov=punchbox --cov-config .coveragerc tests/ -sq
 	@. ${DIR}/.venv/bin/activate && poetry run isort .
 	@. ${DIR}/.venv/bin/activate && poetry run black .
 	@. ${DIR}/.venv/bin/activate && poetry run flake8
 	@. ${DIR}/.venv/bin/activate && poetry run mypy -p punchbox
+
+target/.distrib-package: target/.venv-created  target/.distrib-built ${MYSOURCES}
+	rm -rf dist
+	@. ${DIR}/.venv/bin/activate && poetry run pex ${DIR} -c punchbox -o dist/pex/punchbox -v
 	touch $@
 
-target/.distrib-test: target/.venv-created ${MYSOURCES}
+target/.distrib-test: target/.venv-created
 	$(info ************  Pytest Unit testing  ************)
 	@. ${DIR}/.venv/bin/activate && poetry run pytest
-	touch $@
+	@. ${DIR}/.venv/bin/activate && poetry run pytest --cov=punchbox --cov-config .coveragerc tests/ -sq
 
 ##@ Helpers
 

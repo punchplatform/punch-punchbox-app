@@ -7,6 +7,7 @@ import shutil
 from typing import Tuple
 
 from punchbox.common_lib.data_classes import punchbox_configuration
+from punchbox.common_lib.runtime_meta.key import Key
 from punchbox.punch_entry_point.cli_configuration import PunchLogger
 
 
@@ -57,7 +58,17 @@ class PunchFileUtils(object):
     @staticmethod
     def read_punchbox_settings_file(path: str) -> punchbox_configuration.Punchbox:
         conf: dict = PunchFileUtils.read_file_yaml_as_dict(path)
-        return punchbox_configuration.Punchbox(**conf)
+        vagrant: punchbox_configuration.Vagrant = punchbox_configuration.Vagrant(
+            **conf[Key.VAGRANT]
+        )
+        env: punchbox_configuration.Env = punchbox_configuration.Env(**conf[Key.ENV])
+        punch: punchbox_configuration.Punch = punchbox_configuration.Punch(
+            **conf[Key.PUNCH]
+        )
+        version: str = conf[Key.VERSION]
+        return punchbox_configuration.Punchbox(
+            version=version, vagrant=vagrant, env=env, punch=punch
+        )
 
     @staticmethod
     def read_file_yaml_as_dict(path: str) -> dict:

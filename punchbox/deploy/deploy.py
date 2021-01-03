@@ -11,8 +11,9 @@ import click
 from punchbox.common_lib.command_meta.command_option import CommandOption
 from punchbox.common_lib.command_meta.commands import Commands
 from punchbox.common_lib.data_classes.punchbox_configuration import Punchbox
+from punchbox.common_lib.runtime_meta import state_code
 from punchbox.punch_entry_point import cli_configuration
-from punchbox.utils import state_utils
+from punchbox.punch_entry_point.cli_configuration import PunchLogger
 from punchbox.utils.punch_file_utils import PunchFileUtils
 
 
@@ -49,11 +50,15 @@ def deploy_audit(ctx, workspace: Union[str, bytes, os.PathLike], verbose: bool) 
     )
     conf_file = conf.punch.deployment_settings
     if verbose:
-        click.echo(f"audit command: \n" f" {audit_cmd} {audit_yml} {conf_file} \n")
-    if state_utils.StateCode.SUCCESS == os.system(
+        PunchLogger().debug_yellow(
+            f"audit command: \n" f" {audit_cmd} {audit_yml} {conf_file} \n"
+        )
+    if state_code.StateCode.SUCCESS == os.system(
         f" {audit_cmd} {audit_yml} {conf_file}"
     ):
-        click.echo(f"INFO: your generated settings {conf_file} are correct \n")
-        return state_utils.StateCode.SUCCESS
-    click.echo(f"ERROR: your generated settings {conf_file} are incorrect", err=True)
-    return state_utils.StateCode.FAILURE
+        PunchLogger().info_green(
+            f"INFO: your generated settings {conf_file} are correct \n"
+        )
+        return state_code.StateCode.SUCCESS
+    PunchLogger().error_red(f"ERROR: your generated settings {conf_file} are incorrect")
+    return state_code.StateCode.FAILURE

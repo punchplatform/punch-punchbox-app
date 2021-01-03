@@ -1,0 +1,11 @@
+[run]
+omit =
+    # files below contains either no code or static information
+    punchbox/common_lib/command_meta/commands.py
+    punchbox/common_lib/command_meta/command_option.py
+    punchbox/common_lib/runtime_meta/environment.py
+    punchbox/common_lib/runtime_meta/key.py
+    punchbox/components.py
+    punchbox/services.py
+
+

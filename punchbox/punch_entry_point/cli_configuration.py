@@ -11,6 +11,9 @@ from typing import Type
 from click_help_colors import HelpColorsGroup
 from rich.logging import RichHandler
 
+from punchbox.common_lib.runtime_meta.environment import Environment
+from punchbox.common_lib.runtime_meta.key import Key
+
 
 @dataclasses.dataclass()
 class ClickSettings(object):
@@ -41,18 +44,27 @@ class CliConfiguration(object):
 
 class PunchLogger(object):
 
-    __log: logging.Logger
-
-    def __init__(self) -> None:
-        # noinspection PyArgumentList
-        logging.basicConfig(
-            level="NOTSET",
-            format="%(message)s",
-            datefmt="[%X]",
-            handlers=[RichHandler(rich_tracebacks=True)],
-        )
-        self.__log = logging.getLogger("punchbox")
+    # noinspection PyArgumentList
+    logging.basicConfig(
+        level=Environment.punchbox_log_level(),
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler(rich_tracebacks=True)],
+    )
+    __log: logging.Logger = logging.getLogger(Key.PUNCH_LOGGER)
 
     @property
     def logger(self) -> logging.Logger:
         return self.__log
+
+    def error_red(self, message: str) -> None:
+        self.__log.error(msg=f"[bold red]{message}[/]", extra={"markup": True})
+
+    def info_green(self, message: str) -> None:
+        self.__log.info(msg=f"[bold green]{message}[/]", extra={"markup": True})
+
+    def info_markup_only(self, message: str) -> None:
+        self.__log.info(msg=f"{message}", extra={"markup": True})
+
+    def debug_yellow(self, message: str) -> None:
+        self.__log.debug(msg=f"[bold yellow]{message}[/]", extra={"markup": True})
