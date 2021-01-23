@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 COMPONENTS = [
+    "kast",
     "punch",
     "minio",
     "zookeeper",

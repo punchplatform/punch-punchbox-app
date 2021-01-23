@@ -1,9 +1,7 @@
 # the PunchBox
 
-Welcome to the punhcbox tool. This project is the successor of the 
-https://github.com/punchplatform/punchbox project. We plan to make it
-the official tool to deploy various sort of punch: standalone, production,
-or even hybrids. 
+Welcome to the punchbox tool. This project is an attempt to come up with a  successor the 
+https://github.com/punchplatform/punchbox project. In short, a tool to easily deploy kast or punch instances.
 
 This project uses [poetry](https://python-poetry.org/) as it's dependency manager and PEX for distribution.
 
@@ -16,23 +14,21 @@ this version of python installed:
 pyenv install 3.6.8
 ```
 
-## Workflow
+## How To
 
-Use the provided `Makefile` to start a clean development environment.
+The Makefile is explicit simply type 'make' to see the options. STart simply with:
 
 ```shell
-# Run punchbox in development mode
-
-source .venv/bin/activate
-poetry run punchbox
-
-# or
-
-make test-cli
-
-# After each modification be sure to run
-make lint
-
-# Before pushing
 make all
 ```
+
+That generates the punchbox executable tool in  ./dist/pex/punchbox.
+From there use the tool inline documentation to understand how it works. 
+
+Note that a variant to run the punchbox is to pass through poetry:
+
+```shell
+source .venv/bin/activate
+poetry run punchbox
+```
+
